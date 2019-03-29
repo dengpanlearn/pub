@@ -97,6 +97,9 @@
 #define STATUS_OK				0
 #define STATUS_ERROR			-1
 
+#ifdef DEBUG
 
-#define	UNUSED_EX(_x)
+#endif // DEBUG
+
+#define	DP_UNUSED_EX(_x)
 #endif /* ZYHD_PUBLIC_H */

@@ -42,6 +42,7 @@ typedef char			TCHAR;
 typedef const char*		LPCTSTR;
 typedef char*			LPTSTR;
 #define EOS				'\0'
+#define _T(_x)		(_x)
 
 /*数据类型范围*/
 
@@ -120,6 +121,31 @@ inline int stricmp(const char *s, const char *t)
 inline int strnicmp(const char *s, const char *t, size_t len)
 {
 	return strncasecmp(s, t, len);
+}
+inline void charTowchar(const char *chr, LPTSTR pWchar, int size)
+{
+}
+
+inline int sprintf_s(char* pBuf, size_t sizeOfBuffer, const char* format, ...)
+{
+	va_list list;
+	int i;
+	
+	va_start(list, format);
+	i = _vsnprintf(pBuf, sizeOfBuffer, format, list);
+	va_end(list);
+	return i;
+}
+
+inline int swprintf_s(TCHAR* pBuf, size_t sizeOfBuffer, const TCHAR* format, ...)
+{
+	va_list list;
+	int i;
+	
+	va_start(list, format);
+	i = _vsnprintf(pBuf, sizeOfBuffer, format, list);
+	va_end(list);
+	return i;
 }
 
 #ifdef __cplusplus

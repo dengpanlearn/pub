@@ -167,6 +167,17 @@ typedef int				STATUS;
   extern "C" {
  #endif
  void zyhdTrace(const TCHAR* fmt, ...);
+
+ inline int WcharToChar(LPCTSTR pwchar, char* pChar)
+ {
+	 int iLength = WideCharToMultiByte(CP_ACP, 0, pwchar, wcslen(pwchar), NULL, 0, NULL, NULL);
+	 if (iLength < 0)
+		 return iLength;
+
+	 return WideCharToMultiByte(CP_ACP, 0, pwchar, wcslen(pwchar), pChar, iLength, NULL, NULL);
+ }
+
+
  #ifdef __cplusplus
   }
  #endif
