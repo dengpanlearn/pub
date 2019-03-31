@@ -27,7 +27,11 @@ BOOL CTimeOutTask::Create(LPCTSTR pNameTask, int stackSize, int priTask, int opt
 		m_timeoutMs = timeoutMs;
 
 	TCHAR eventExitName[32] = { 0 };
+#ifdef UNICODE
 	swprintf_s(eventExitName, countof(eventExitName)-1, _T("%s%s"), TIMEOUT_TASK_EVENT_NAME_PREFIX, pNameTask);
+#else
+	sprintf_s(eventExitName, countof(eventExitName) - 1, _T("%s%s"), TIMEOUT_TASK_EVENT_NAME_PREFIX, pNameTask);
+#endif
 	
 	
 	m_ExitEvent = dpEventCreate(FALSE, eventExitName, FALSE);

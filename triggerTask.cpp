@@ -22,7 +22,11 @@ BOOL CTriggerTask::Create(LPCTSTR pNameTask, int stackSize, int priTask, int opt
 { 
 	TCHAR triggerEventName[32] = {0};
 
+#ifdef UNICODE
 	swprintf_s(triggerEventName, countof(triggerEventName) - 1, _T("%s%s"), TRIGGER_TASK_EVENT_NAME_PREFIX, pNameTask);
+#else
+	sprintf_s(triggerEventName, countof(triggerEventName) - 1, _T("%s%s"), TRIGGER_TASK_EVENT_NAME_PREFIX, pNameTask);
+#endif 
 	m_triggerEvent = dpEventCreate(FALSE, triggerEventName, FALSE);
 
 	if (m_triggerEvent == INVALID_DP_EVENT_ID)
