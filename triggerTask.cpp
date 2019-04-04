@@ -58,7 +58,7 @@ BOOL CTriggerTask::StartTrigger(void* pTriggerArg)
 {
 	CSingleLock lock(&m_cs, TRUE);
 
-	if (TRIGGET_STEP_NONE != m_triggerStep)
+	if (TRIGGER_STEP_NONE != m_triggerStep)
 		return FALSE;
 
 	if (!PrepareTriggerParam(pTriggerArg))
@@ -75,10 +75,11 @@ void CTriggerTask::StopTrigger()
 	DP_UNUSED_EX(pTriggerArg);
 	CSingleLock lock(&m_cs, TRUE);
 
-	if (TRIGGET_STEP_NONE == m_triggerStep)
+	if (TRIGGER_STEP_NONE == m_triggerStep)
 		return ;
 
 	m_triggerCmd = TRIGGER_CMD_STOP;
+	m_triggerStep = TRIGGER_STEP_WAIT_ACTIVE;
 	dpEventSet(m_triggerEvent);
 }
 
@@ -126,9 +127,9 @@ void CTriggerTask::OnActive()
 {
 	CSingleLock lock(&m_cs, TRUE);
 	if (m_triggerCmd == TRIGGER_CMD_START)
-		m_triggerStep = TRIGGET_STEP_PREPARE_START;
+		m_triggerStep = TRIGGER_STEP_PREPARE_START;
 	else if (m_triggerCmd == TRIGGER_CMD_STOP)
-		m_triggerStep = TRIGGET_STEP_PREPARE_STOP;
+		m_triggerStep = TRIGGER_STEP_PREPARE_STOP;
 
 	dpEventReset(m_triggerEvent);
 }
@@ -142,13 +143,13 @@ void CTriggerTask::OnTimeout()
 {
 	UINT curStep = m_triggerStep;
 	
-	if (curStep == TRIGGET_STEP_NONE)
+	if (curStep == TRIGGER_STEP_NONE)
 		return;
-	else if (curStep == TRIGGET_STEP_PREPARE_START)
+	else if (curStep == TRIGGER_STEP_PREPARE_START)
 		curStep = OnPrepareStartWork(curStep);
-	else if (curStep == TRIGGET_STEP_PREPARE_STOP)
+	else if (curStep == TRIGGER_STEP_PREPARE_STOP)
 		curStep = OnPrepareStopWork(curStep);
-	else if (curStep == TRIGGET_STEP_TIMEOUT_WORK)
+	else if (curStep == TRIGGER_STEP_TIMEOUT_WORK)
 		curStep = OnTimeoutWork(curStep);
 
 	if (curStep != m_triggerStep)
@@ -173,19 +174,19 @@ BOOL CTriggerTask::PrepareTriggerParam(void* pArg)
 UINT CTriggerTask::OnPrepareStartWork(UINT step)
 {
 	DP_UNUSED_EX(step);
-	return TRIGGET_STEP_TIMEOUT_WORK;
+	return TRIGGER_STEP_TIMEOUT_WORK;
 }
 
 UINT CTriggerTask::OnTimeoutWork(UINT step)
 {
 	DP_UNUSED_EX(step);
-	return TRIGGET_STEP_NONE;
+	return TRIGGER_STEP_NONE;
 }
 
 UINT CTriggerTask::OnPrepareStopWork(UINT step)
 {
 	DP_UNUSED_EX(step);
-	return TRIGGET_STEP_NONE;
+	return TRIGGER_STEP_NONE;
 }
 
 int CTriggerTask::GetTaskEvent(DP_EVENT_ID* pEventsBuf, int maxCount)const
