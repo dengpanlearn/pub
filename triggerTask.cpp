@@ -141,7 +141,11 @@ void CTriggerTask::OnExit()
 
 void CTriggerTask::OnTimeout()
 {
-	UINT curStep = m_triggerStep;
+	UINT curStep = 0;
+	{
+		CSingleLock lock(&m_cs, TRUE);
+		curStep = m_triggerStep;
+	}
 	
 	if (curStep == TRIGGER_STEP_NONE)
 		return;
@@ -180,7 +184,7 @@ UINT CTriggerTask::OnPrepareStartWork(UINT step)
 UINT CTriggerTask::OnTimeoutWork(UINT step)
 {
 	DP_UNUSED_EX(step);
-	return TRIGGER_STEP_NONE;
+	return OnTimeoutWorkSuccess();
 }
 
 UINT CTriggerTask::OnPrepareStopWork(UINT step)

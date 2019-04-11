@@ -25,8 +25,8 @@ public:
 	BOOL StartTrigger(void* pTriggerArg);
 	void StopTrigger();
 
-	inline BOOL IsTriggerStop();
 	inline BOOL IsTriggerEnd();
+	inline BOOL IsTriggerEndSuccess();
 	inline UINT GetTriggerWorkProgress();
 
 	enum TRIGGER_CMD {
@@ -40,10 +40,12 @@ public:
 		TRIGGER_STEP_PREPARE_START,
 		TRIGGER_STEP_PREPARE_STOP,
 		TRIGGER_STEP_TIMEOUT_WORK,
-		TRIGGER_STEP_WAIT_END,
+		TRIGGER_STEP_WORK_SUCCESS,
+		TRIGGER_STEP_WORK_ERROR£¬
 	};
 
 protected:
+
 	virtual BOOL WorkRun();
 	virtual UINT PreActive(UINT timeout);
 	virtual void OnActive();
@@ -55,14 +57,18 @@ protected:
 	virtual UINT OnPrepareStartWork(UINT step);
 	virtual UINT OnTimeoutWork(UINT step);
 	virtual UINT OnPrepareStopWork(UINT step);
-	
+
+
 	virtual int GetTaskEvent(DP_EVENT_ID* pEventsBuf, int maxCount)const;
 
 
 protected:
 	inline void UpdateTriggerWorkProgress();
 	inline CCriticalSection* GetMutex();
-	
+
+	inline UINT OnTimeoutWorkSuccess();
+	inline UINT OnTimeoutWorkError();
+
 private:
 	DP_EVENT_ID		m_triggerEvent;
 	CCriticalSection	m_cs;
@@ -72,19 +78,20 @@ private:
 	UINT			m_workTimes;
 };
 
-inline BOOL CTriggerTask::IsTriggerStop()
-{
-	CSingleLock lock(&m_cs, TRUE);
-
-	return (TRIGGER_STEP_NONE == m_triggerStep);
-}
-
 inline BOOL CTriggerTask::IsTriggerEnd()
 {
 	CSingleLock lock(&m_cs, TRUE);
 
-	return (TRIGGER_STEP_WAIT_END == m_triggerStep);
+	return (TRIGGER_STEP_WORK_SUCCESS == m_triggerStep) ;
 }
+
+inline BOOL CTriggerTask::IsTriggerEndSuccess()
+{
+	CSingleLock lock(&m_cs, TRUE);
+
+	return (TRIGGER_STEP_TIMEOUT_WORK < m_triggerStep);
+}
+
 
 inline void CTriggerTask::UpdateTriggerWorkProgress()
 {
@@ -101,6 +108,16 @@ inline UINT CTriggerTask::GetTriggerWorkProgress()
 inline CCriticalSection* CTriggerTask::GetMutex()
 {
 	return &m_cs;
+}
+
+inline UINT CTriggerTask::OnTimeoutWorkSuccess()
+{
+	return TRIGGER_STEP_WORK_SUCCESS;
+}
+
+inline UINT CTriggerTask::OnTimeoutWorkError()
+{
+	return TRIGGER_STEP_WORK_SUCCESS;
 }
 
 #endif // !__TRIGGER_TASK_H__
