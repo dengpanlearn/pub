@@ -63,11 +63,12 @@ protected:
 
 
 protected:
-	inline void UpdateTriggerWorkProgress();
+	inline void UpdateTriggerWorkProgress(UINT progressValue);
 	inline CCriticalSection* GetMutex();
 
 	inline UINT OnTimeoutWorkSuccess();
 	inline UINT OnTimeoutWorkError();
+	inline UINT OnTimeoutWorkNext();
 
 private:
 	DP_EVENT_ID		m_triggerEvent;
@@ -82,21 +83,21 @@ inline BOOL CTriggerTask::IsTriggerEnd()
 {
 	CSingleLock lock(&m_cs, TRUE);
 
-	return (TRIGGER_STEP_WORK_SUCCESS == m_triggerStep) ;
+	return (TRIGGER_STEP_TIMEOUT_WORK < m_triggerStep);
 }
 
 inline BOOL CTriggerTask::IsTriggerEndSuccess()
 {
 	CSingleLock lock(&m_cs, TRUE);
 
-	return (TRIGGER_STEP_TIMEOUT_WORK < m_triggerStep);
+	return (TRIGGER_STEP_WORK_SUCCESS == m_triggerStep);
 }
 
 
-inline void CTriggerTask::UpdateTriggerWorkProgress()
+inline void CTriggerTask::UpdateTriggerWorkProgress(UINT progressValue)
 {
 	CSingleLock lock(&m_cs, TRUE);
-	m_workTimes++;
+	m_workTimes = progressValue;
 }
 
 inline UINT CTriggerTask::GetTriggerWorkProgress()
@@ -118,6 +119,11 @@ inline UINT CTriggerTask::OnTimeoutWorkSuccess()
 inline UINT CTriggerTask::OnTimeoutWorkError()
 {
 	return TRIGGER_STEP_WORK_SUCCESS;
+}
+
+inline UINT CTriggerTask::OnTimeoutWorkNext()
+{
+	return TRIGGER_STEP_TIMEOUT_WORK;
 }
 
 #endif // !__TRIGGER_TASK_H__

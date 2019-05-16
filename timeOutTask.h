@@ -53,7 +53,8 @@ private:
 
 inline void CTimeOutTask::StopWork() 
 { 
-	dpEventSet(m_ExitEvent); 
+	if (m_ExitEvent != INVALID_DP_THREAD_ID)
+		dpEventSet(m_ExitEvent); 
 }
 
 inline BOOL CTimeOutTask::WaitWorkExit(UINT waitTimeMs)
