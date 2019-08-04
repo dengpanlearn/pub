@@ -10,13 +10,16 @@
 #include "dp.h"
 #include "dllLibEx.h"
 
-typedef void(*EventCompleteFunc)(int status, void* param);
+typedef void(*EventCompleteFunc)(int stat, void* param);
 
-struct EVENTS_NODE
+struct TASK_EVENT_NODE
 {
 	DL_NODE				node;
 	UINT				cmd;
 	void*				param;
 	EventCompleteFunc	completeFunc;
 };
+
+#define	EVENT_COMPLETE_OK		0
+#define	EVENT_COMPLETE_FAIL		-1
 #endif // !__TASK_DEF_H__

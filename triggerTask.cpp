@@ -85,16 +85,17 @@ void CTriggerTask::StopTrigger()
 
 BOOL CTriggerTask::WorkRun()
 {
-	BOOL bContinue = TRUE;
 	DP_EVENT_ID events[2] = { 0 };
 
 	int eventNum = GetTaskEvent(events, countof(events));
 	if (eventNum <= 0)
 		return FALSE;
 
+	BOOL bContinue = TRUE;
 	UINT result = dpWaitForMultipleEvents(events, eventNum, PreActive(m_timeoutMs));
 	if (result == DP_WAIT_FAILED)
 	{
+		OnExit();
 		bContinue = FALSE;
 	}
 	else if (result == DP_WAIT_TIMEOUT)
