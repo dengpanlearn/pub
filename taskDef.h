@@ -13,6 +13,13 @@
 
 typedef void(*EventCompleteFunc)(int stat, void* param, int paramLen);
 
+enum TASK_EVENT_JOB_STEP
+{
+	TASK_EVENT_JOB_STEP_NONE = 0,
+	TASK_EVENT_JOB_STEP_WAITING_RESP,
+	TASK_EVENT_JOB_STEP_COMPLETED,
+};
+
 struct TASK_EVENT_PARAM
 {
 	DP_EVENT_ID		completeEvent;
