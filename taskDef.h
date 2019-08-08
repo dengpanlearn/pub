@@ -8,15 +8,22 @@
 #define	__TASK_DEF_H__
 
 #include "dp.h"
+#include "dpEvent.h"
 #include "dllLibEx.h"
 
-typedef void(*EventCompleteFunc)(int stat, void* param);
+typedef void(*EventCompleteFunc)(int stat, void* param, int paramLen);
+
+struct TASK_EVENT_PARAM
+{
+	DP_EVENT_ID		completeEvent;
+};
 
 struct TASK_EVENT_NODE
 {
 	DL_NODE				node;
 	UINT				cmd;
 	void*				param;
+	int					paramLen;
 	EventCompleteFunc	completeFunc;
 };
 
