@@ -9,6 +9,7 @@
 CMultiEventsTask::CMultiEventsTask()
 {
 	m_pBuf = NULL;
+	m_iEventParamSizeMax = 0;
 	m_eventActive = INVALID_DP_EVENT_ID;
 	dllInit(&m_freeList);
 	dllInit(&m_usedList);
@@ -19,9 +20,10 @@ CMultiEventsTask::~CMultiEventsTask()
 	Close();
 }
 
-BOOL CMultiEventsTask::Create(LPCTSTR pNameTask, int stackSize, int priTask, int optTask, int timeoutMs, int maxEvents)
+BOOL CMultiEventsTask::Create(LPCTSTR pNameTask, int stackSize, int priTask, int optTask, int timeoutMs, int maxEvents, int maxEventBufSize)
 {
-	m_pBuf = calloc(maxEvents, sizeof(TASK_EVENT_NODE));
+	m_iEventParamSizeMax = maxEventBufSize;
+	m_pBuf = calloc(maxEvents, sizeof(TASK_EVENT_NODE)+ ROUND_UP(maxEventBufSize, 64));
 	if (m_pBuf == NULL)
 		return FALSE;
 
@@ -163,19 +165,31 @@ void CMultiEventsTask::OnActive()
 	if (pEventNode == NULL)
 		return;
 
-	int stat = OnEventActive(pEventNode->cmd, pEventNode->param);
+	int result = OnEventActive(pEventNode->cmd, pEventNode->paramBuf, pEventNode->paramLen);
 
-	pEventNode->completeFunc(stat, pEventNode->param);
+	if (pEventNode->completeFunc != NULL)
+	{
+		if (!pEventNode->completeFunc(pEventNode->cmd,result, pEventNode->paramBuf, pEventNode->paramLen))
+		{
+			// 失败，将命令事件重新加入待处理列表等待处理
+			BackEvent(pEventNode);
+			return;
+		}
+	}
+		
 	ReleaseEvent(pEventNode);
 }
 
-int CMultiEventsTask::OnEventActive(UINT cmd, void* param)
+int CMultiEventsTask::OnEventActive(UINT cmd, void* param, int paramLen)
 {
 	return EVENT_COMPLETE_OK;
 }
 
-BOOL CMultiEventsTask::PostEvent(UINT cmd, void* param, EventCompleteFunc completeFunc)
+BOOL CMultiEventsTask::PostEvent(UINT cmd, void* param, int paramLen, EventCompleteFunc completeFunc)
 {
+	if (paramLen > m_iEventParamSizeMax)
+		return FALSE;
+
 	CSingleLock lock(&m_cs);
 	union
 	{
@@ -188,16 +202,48 @@ BOOL CMultiEventsTask::PostEvent(UINT cmd, void* param, EventCompleteFunc comple
 		return  FALSE;
 
 	pEventNode->cmd = cmd;
-	pEventNode->param = param;
+	pEventNode->paramLen = paramLen;
+	memcpy(pEventNode->paramBuf, param, paramLen);
 	pEventNode->completeFunc = completeFunc;
 
 	int usedCounts = dllCount(&m_usedList);
 
-	dllAdd(&m_usedList, pNode);
+	dllInsert(&m_usedList, NULL, pNode);
 
 	if (usedCounts == 0)
 		dpEventSet(m_eventActive);
 
+	return TRUE;
+}
+
+
+void CMultiEventsTask::BackEvent(TASK_EVENT_NODE* pEventNode)
+{
+	CSingleLock lock(&m_cs);
+	int usedCounts = dllCount(&m_usedList);
+	dllAdd(&m_usedList, &pEventNode->node);
+
+	if (usedCounts == 0)
+		dpEventSet(m_eventActive);
+}
+
+void CMultiEventsTask::ReleaseEvent(TASK_EVENT_NODE* pEventNode)
+{
+	CSingleLock lock(&m_cs);
+	dllAdd(&m_freeList, &pEventNode->node);
+}
+
+BOOL CMultiEventsTask::MultiTaskEventComplete(UINT cmd, int result, void* param, int paramLen)
+{
+	TASK_EVENT_PARAM* pEventParam = (TASK_EVENT_PARAM*)param;
+	CMultiEventsTask* pMultiEventTask = pEventParam->pMultiEventTask;
+	if (pMultiEventTask == NULL)
+		return TRUE;
+	return pMultiEventTask->OnEventComplete(cmd, result, param, paramLen);
+}
+
+BOOL CMultiEventsTask::OnEventComplete(UINT cmd, int result, void* param, int paramLen)
+{
 	return TRUE;
 }
 
@@ -219,10 +265,4 @@ TASK_EVENT_NODE* CMultiEventsTask::TakeEvent()
 		dpEventReset(m_eventActive);
 
 	return pEventNode;
-}
-
-void CMultiEventsTask::ReleaseEvent(TASK_EVENT_NODE* pEventNode)
-{
-	CSingleLock lock(&m_cs);
-	dllAdd(&m_freeList, &pEventNode->node);
 }

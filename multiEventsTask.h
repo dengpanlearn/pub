@@ -19,7 +19,7 @@ public:
 	CMultiEventsTask();
 	virtual ~CMultiEventsTask();
 
-	BOOL Create(LPCTSTR pNameTask, int stackSize, int priTask, int optTask, int timeoutMs, int maxEvents);
+	BOOL Create(LPCTSTR pNameTask, int stackSize, int priTask, int optTask, int timeoutMs, int maxEvents, int maxEventBufSize);
 	void Close();
 
 protected:
@@ -31,13 +31,24 @@ protected:
 	virtual int GetTaskEvent(DP_EVENT_ID* pEventsBuf, int maxCount)const;
 
 	virtual void OnActive();
-	virtual int OnEventActive(UINT cmd, void* param);
+	virtual int OnEventActive(UINT cmd, void* param, int paramLen);
+
+public:
+	BOOL PostEvent(UINT cmd, void* param, int paramLen, EventCompleteFunc completeFunc);
 
 protected:
-	BOOL PostEvent(UINT cmd, void* param, EventCompleteFunc completeFunc);
+	inline DP_EVENT_ID	GetTaskActiveEvent();
+	inline void InitMultiTaskEventParam(void* param, int paramLen);
 
 	TASK_EVENT_NODE* TakeEvent();
+
+	void BackEvent(TASK_EVENT_NODE* pEventNode);
 	void ReleaseEvent(TASK_EVENT_NODE* pEventNode);
+
+protected:
+	static BOOL MultiTaskEventComplete(UINT cmd, int result, void* param, int paramLen);
+
+	virtual BOOL OnEventComplete(UINT cmd, int result, void* param, int paramLen);
 
 private:
 	void InitEventsBuf(void* pBuf, int iEventCounts);
@@ -48,5 +59,17 @@ private:
 	DL_LIST		m_usedList;
 	CCriticalSection	m_cs;
 	DP_EVENT_ID	m_eventActive;
+	int			m_iEventParamSizeMax;
 };
+
+inline DP_EVENT_ID	CMultiEventsTask::GetTaskActiveEvent()
+{
+	return m_eventActive;
+}
+
+inline void CMultiEventsTask::InitMultiTaskEventParam(void* param, int paramLen)
+{
+	TASK_EVENT_PARAM* pEventParam = (TASK_EVENT_PARAM*)param;
+	pEventParam->pMultiEventTask = this;
+}
 #endif // !__MULTI_EVNETS_TASK_H__
