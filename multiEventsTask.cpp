@@ -22,11 +22,11 @@ CMultiEventsTask::~CMultiEventsTask()
 
 BOOL CMultiEventsTask::Create(LPCTSTR pNameTask, int stackSize, int priTask, int optTask, int timeoutMs, int maxEvents, int maxEventBufSize)
 {
-	m_iEventParamSizeMax = maxEventBufSize;
-	m_pBuf = calloc(maxEvents, sizeof(TASK_EVENT_NODE)+ ROUND_UP(maxEventBufSize, 64));
+	m_iEventParamSizeMax = ROUND_UP(maxEventBufSize, 64);
+	m_pBuf = calloc(maxEvents, sizeof(TASK_EVENT_NODE)+ m_iEventParamSizeMax);
 	if (m_pBuf == NULL)
 		return FALSE;
-
+	InitEventsBuf(m_pBuf, maxEvents);
 	TCHAR triggerEventName[32] = { 0 };
 
 #ifdef UNICODE
@@ -53,6 +53,7 @@ BOOL CMultiEventsTask::Create(LPCTSTR pNameTask, int stackSize, int priTask, int
 
 void CMultiEventsTask::Close()
 {
+	CTimeOutTask::Close();
 	if (m_eventActive != INVALID_DP_EVENT_ID)
 	{
 		dpEventClose(m_eventActive);
@@ -75,12 +76,14 @@ void CMultiEventsTask::InitEventsBuf(void* pBuf, int iEventCounts)
 	{
 		DL_NODE* pNode;
 		TASK_EVENT_NODE* pEventNode;
+		char*	pTmpBuf;
 	};
 
-	pEventNode = (TASK_EVENT_NODE*)pBuf;
-	for (int i = 0; i < iEventCounts; i++, pEventNode++)
+	pTmpBuf = (char*)pBuf;
+	for (int i = 0; i < iEventCounts; i++ )
 	{
 		DLL_ADD(&m_freeList, pNode);
+		pTmpBuf += m_iEventParamSizeMax + sizeof(TASK_EVENT_NODE);
 	}
 }
 
@@ -139,7 +142,7 @@ void CMultiEventsTask::OnTimeout()
 
 BOOL CMultiEventsTask::CheckSelf()
 {
-	CTimeOutTask::CheckSelf();
+	return CTimeOutTask::CheckSelf();
 }
 
 int CMultiEventsTask::GetTaskEvent(DP_EVENT_ID* pEventsBuf, int maxCount)const

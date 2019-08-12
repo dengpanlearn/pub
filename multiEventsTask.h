@@ -7,6 +7,7 @@
 #ifndef __MULTI_EVNETS_TASK_H__
 #define	__MULTI_EVNETS_TASK_H__
 
+#include "dp.h"
 #include "SyncObj.h"
 #include "taskDef.h"
 #include "timeOutTask.h"
