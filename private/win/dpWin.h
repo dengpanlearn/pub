@@ -26,6 +26,7 @@ Windows平台公共头文件定义
 #include <ctype.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include <string.h>
 #include <errno.h>
 #include <new.h>
