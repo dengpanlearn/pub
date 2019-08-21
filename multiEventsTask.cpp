@@ -188,12 +188,12 @@ int CMultiEventsTask::OnEventActive(UINT cmd, void* param, int paramLen)
 	return EVENT_COMPLETE_OK;
 }
 
-BOOL CMultiEventsTask::PostEvent(UINT cmd, void* param, int paramLen, EventCompleteFunc completeFunc)
+void* CMultiEventsTask::AllocPktByEvent(UINT cmd, int paramLen, EventCompleteFunc completeFunc, CMultiEventsTask* pEventTask)
 {
 	if (paramLen > m_iEventParamSizeMax)
-		return FALSE;
+		return NULL;
 
-	CSingleLock lock(&m_cs);
+	CSingleLock lock(&m_cs, TRUE);
 	union
 	{
 		TASK_EVENT_NODE* pEventNode;
@@ -202,12 +202,27 @@ BOOL CMultiEventsTask::PostEvent(UINT cmd, void* param, int paramLen, EventCompl
 
 	pNode = dllGet(&m_freeList);
 	if (pNode == NULL)
-		return  FALSE;
+		return  NULL;
 
 	pEventNode->cmd = cmd;
 	pEventNode->paramLen = paramLen;
-	memcpy(pEventNode->paramBuf, param, paramLen);
 	pEventNode->completeFunc = completeFunc;
+	TASK_EVENT_PARAM* pEventParam = (TASK_EVENT_PARAM*)pEventNode->paramBuf;
+	pEventParam->pMultiEventTask = pEventTask;
+
+	return pEventParam;
+}
+
+void CMultiEventsTask::PostPktByEvent(void* pBuf)
+{
+	CSingleLock lock(&m_cs, TRUE);
+	union
+	{
+		TASK_EVENT_NODE* pEventNode;
+		DL_NODE*	pNode;
+	};
+
+	pEventNode = member_to_object(pBuf, TASK_EVENT_NODE, paramBuf);
 
 	int usedCounts = dllCount(&m_usedList);
 
@@ -215,14 +230,11 @@ BOOL CMultiEventsTask::PostEvent(UINT cmd, void* param, int paramLen, EventCompl
 
 	if (usedCounts == 0)
 		dpEventSet(m_eventActive);
-
-	return TRUE;
 }
-
 
 void CMultiEventsTask::BackEvent(TASK_EVENT_NODE* pEventNode)
 {
-	CSingleLock lock(&m_cs);
+	CSingleLock lock(&m_cs, TRUE);
 	int usedCounts = dllCount(&m_usedList);
 	dllAdd(&m_usedList, &pEventNode->node);
 
@@ -232,7 +244,7 @@ void CMultiEventsTask::BackEvent(TASK_EVENT_NODE* pEventNode)
 
 void CMultiEventsTask::ReleaseEvent(TASK_EVENT_NODE* pEventNode)
 {
-	CSingleLock lock(&m_cs);
+	CSingleLock lock(&m_cs, TRUE);
 	dllAdd(&m_freeList, &pEventNode->node);
 }
 
@@ -252,7 +264,7 @@ BOOL CMultiEventsTask::OnEventComplete(UINT cmd, int result, void* param, int pa
 
 TASK_EVENT_NODE* CMultiEventsTask::TakeEvent()
 {
-	CSingleLock lock(&m_cs);
+	CSingleLock lock(&m_cs, TRUE);
 	union
 	{
 		TASK_EVENT_NODE* pEventNode;

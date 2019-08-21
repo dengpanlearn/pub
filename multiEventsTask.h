@@ -35,13 +35,16 @@ protected:
 	virtual int OnEventActive(UINT cmd, void* param, int paramLen);
 
 public:
-	BOOL PostEvent(UINT cmd, void* param, int paramLen, EventCompleteFunc completeFunc);
+//	BOOL PostEvent(UINT cmd, void* param, int paramLen, EventCompleteFunc completeFunc);
+	void* AllocPktByEvent(UINT cmd, int paramLen, EventCompleteFunc completeFunc, CMultiEventsTask* pEventTask);
+	void PostPktByEvent(void* pBuf);
 
 protected:
 	inline DP_EVENT_ID	GetTaskActiveEvent();
-	inline void InitMultiTaskEventParam(void* param, int paramLen);
+	
 
 	TASK_EVENT_NODE* TakeEvent();
+
 
 	void BackEvent(TASK_EVENT_NODE* pEventNode);
 	void ReleaseEvent(TASK_EVENT_NODE* pEventNode);
@@ -66,11 +69,5 @@ private:
 inline DP_EVENT_ID	CMultiEventsTask::GetTaskActiveEvent()
 {
 	return m_eventActive;
-}
-
-inline void CMultiEventsTask::InitMultiTaskEventParam(void* param, int paramLen)
-{
-	TASK_EVENT_PARAM* pEventParam = (TASK_EVENT_PARAM*)param;
-	pEventParam->pMultiEventTask = this;
 }
 #endif // !__MULTI_EVNETS_TASK_H__

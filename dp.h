@@ -102,4 +102,10 @@
 #endif // DEBUG
 
 #define	DP_UNUSED_EX(_x)
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((int) &((TYPE *)0)->MEMBER)
+#endif // !offsetof
+
+#define member_to_object(pMember, type, memberName) \
+    ((type *)((char *)(pMember) - offsetof (type, memberName)))
 #endif /* ZYHD_PUBLIC_H */
