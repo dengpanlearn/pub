@@ -225,8 +225,8 @@ void CMultiEventsTask::PostPktByEvent(void* pBuf)
 	pEventNode = member_to_object(pBuf, TASK_EVENT_NODE, paramBuf);
 
 	int usedCounts = dllCount(&m_usedList);
+	dllAdd(&m_usedList, pNode);
 
-	dllInsert(&m_usedList, NULL, pNode);
 
 	if (usedCounts == 0)
 		dpEventSet(m_eventActive);
@@ -236,7 +236,7 @@ void CMultiEventsTask::BackEvent(TASK_EVENT_NODE* pEventNode)
 {
 	CSingleLock lock(&m_cs, TRUE);
 	int usedCounts = dllCount(&m_usedList);
-	dllAdd(&m_usedList, &pEventNode->node);
+	dllInsert(&m_usedList, NULL, &pEventNode->node);
 
 	if (usedCounts == 0)
 		dpEventSet(m_eventActive);
