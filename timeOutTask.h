@@ -37,7 +37,7 @@ protected:
 	virtual void OnTimeout();
 	virtual BOOL CheckSelf();
 	virtual int GetTaskEvent(DP_EVENT_ID* pEventsBuf, int maxCount)const;
-
+	virtual int GetTaskEventCount()const;
 private:
 	static int Work(void* pArg);
 	int WorkCore();

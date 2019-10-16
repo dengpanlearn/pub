@@ -122,6 +122,11 @@ int CTimeOutTask::GetTaskEvent(DP_EVENT_ID* pEventsBuf, int maxCount)const
 	return 1;
 }
 
+int CTimeOutTask::GetTaskEventCount()const
+{
+	return 1;
+}
+
 int CTimeOutTask::Work(void* pArg)
 {
 	CTimeOutTask* pTask = (CTimeOutTask*)pArg;

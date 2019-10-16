@@ -13,7 +13,7 @@
 #include "timeOutTask.h"
 
 #define	MULTI_TASK_EVENT_NAME_PREFIX	_T("event_multi_")
-
+#define	MULTI_TASK_EVENTS_MAX			4
 class CMultiEventsTask: public CTimeOutTask
 {
 public:
@@ -27,9 +27,11 @@ protected:
 	virtual BOOL WorkRun();
 	virtual UINT PreActive(UINT timeout);
 	virtual void OnExit();
+	virtual void OnSubEventActive(UINT evnetNum);
 	virtual void OnTimeout();
 	virtual BOOL CheckSelf();
 	virtual int GetTaskEvent(DP_EVENT_ID* pEventsBuf, int maxCount)const;
+	virtual int GetTaskEventCount()const;
 
 	virtual void OnActive();
 	virtual int OnEventActive(UINT cmd, void* param, int paramLen);

@@ -89,9 +89,10 @@ void CMultiEventsTask::InitEventsBuf(void* pBuf, int iEventCounts)
 
 BOOL CMultiEventsTask::WorkRun()
 {
-	DP_EVENT_ID events[2] = { 0 };
+	int eventCounts = GetTaskEventCount();
+	DP_EVENT_ID events[MULTI_TASK_EVENTS_MAX] = { 0 };
 
-	int eventNum = GetTaskEvent(events, countof(events));
+	int eventNum = GetTaskEvent(events, (eventCounts < MULTI_TASK_EVENTS_MAX)? eventCounts: MULTI_TASK_EVENTS_MAX);
 	if (eventNum <= 0)
 		return FALSE;
 
@@ -100,6 +101,9 @@ BOOL CMultiEventsTask::WorkRun()
 	switch (result)
 	{
 	default:
+		OnSubEventActive(result);
+		break;
+
 	case DP_WAIT_FAILED:
 	case DP_WAIT_OBJECT_0:
 		OnExit();
@@ -135,6 +139,11 @@ void CMultiEventsTask::OnExit()
 	CTimeOutTask::OnExit();
 }
 
+void CMultiEventsTask::OnSubEventActive(UINT evnetNum)
+{
+
+}
+
 void CMultiEventsTask::OnTimeout()
 {
 	CTimeOutTask::OnTimeout();
@@ -160,6 +169,11 @@ int CMultiEventsTask::GetTaskEvent(DP_EVENT_ID* pEventsBuf, int maxCount)const
 	}
 
 	return eventCount;
+}
+
+int CMultiEventsTask::GetTaskEventCount()const
+{
+	return CTimeOutTask::GetTaskEventCount() + 1;
 }
 
 void CMultiEventsTask::OnActive()
